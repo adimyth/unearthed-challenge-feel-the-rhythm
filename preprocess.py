@@ -1,5 +1,3 @@
-import argparse
-
 import pandas as pd  # type: ignore
 
 wa_hols = [
@@ -237,18 +235,18 @@ def preprocess(data_file, is_training=True):
     # Western Australia public holiday
     df["holiday"] = df["Work_DateTime"].dt.round("1D").isin(wa_hols)
 
-    # Period
+    # Period: {"Late Night": 1, "Early Morning": 2, "Morning": 2, "Noon": 3, "Evening": 4, "Night": 5}
     bins = [0, 4, 8, 12, 16, 20, 24]
     labels = ["Late Night", "Early Morning", "Morning", "Noon", "Evening", "Night"]
     df["period"] = pd.cut(
         df["Work_DateTime"].dt.hour, bins=bins, labels=labels, include_lowest=True
     )
 
-    # Season
-    df.loc[df["month"].isin([12, 1, 2]), "season"] = "Summer"
-    df.loc[df["month"].isin([3, 4, 5]), "season"] = "Autumn"
-    df.loc[df["month"].isin([6, 7, 8]), "season"] = "Winter"
-    df.loc[df["month"].isin([9, 10, 11]), "season"] = "Spring"
+    # Season - {"Summer": 1, "Autumn": 2, "Winter": 3, "Spring": 4}
+    df.loc[df["month"].isin([12, 1, 2]), "season"] = 1
+    df.loc[df["month"].isin([3, 4, 5]), "season"] = 2
+    df.loc[df["month"].isin([6, 7, 8]), "season"] = 3
+    df.loc[df["month"].isin([9, 10, 11]), "season"] = 4
 
     # Gap Between Working Days
     df["gap"] = df.groupby("EmpNo_Anon")["date"].diff().dt.days
@@ -257,30 +255,3 @@ def preprocess(data_file, is_training=True):
         return df[input_cols + ["incident"]]
     else:
         return df[input_cols]
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--input", type=str, default="/opt/ml/processing/input/public/public.csv.gz"
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="/opt/ml/processing/output/preprocess/public.csv.gz",
-    )
-    args, _ = parser.parse_known_args()
-
-    # call preprocessing on private data
-    df = preprocess(args.input, False)
-
-    # remove the target columns
-    # the target variables are labelled target_pressure_absolute_[1dy, 2wk, 6wk]
-    target_columns = []
-    try:
-        df.drop(columns=target_columns, inplace=True)
-    except KeyError:
-        pass
-
-    # write to the output location
-    df.to_csv(args.output)
