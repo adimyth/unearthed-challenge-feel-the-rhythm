@@ -1,12 +1,13 @@
 """Unearthed Prediction Template"""
-import logging
 import argparse
+import logging
 from os import getenv
 from os.path import join
-import pandas as pd
+
+import pandas as pd  # type: ignore
 
 from preprocess import preprocess
-from train import model_fn, target_columns
+from train import model_fn
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -48,4 +49,6 @@ if __name__ == "__main__":
     logger.info(f"predictions have shape of {predictions.shape}")
 
     # save the predictions
-    pd.DataFrame(predictions, columns=['incident'], index=df.index).to_csv(args.output, index=False, header=False)
+    pd.DataFrame(predictions, columns=["incident"], index=df.index).to_csv(
+        args.output, index=False, header=False
+    )

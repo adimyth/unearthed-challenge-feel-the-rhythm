@@ -1,4 +1,3 @@
-"""Unearthed Training Template"""
 import argparse
 import logging
 import pickle
@@ -6,9 +5,11 @@ import sys
 from io import StringIO
 from os import getenv
 from os.path import abspath, join
-import pandas as pd
-from interpret.glassbox import ExplainableBoostingClassifier
-from preprocess import preprocess, oversample
+
+import pandas as pd  # type: ignore
+from interpret.glassbox import ExplainableBoostingClassifier  # type: ignore
+
+from preprocess import oversample, preprocess
 
 random_state = 42
 logger = logging.getLogger(__name__)
