@@ -11,7 +11,7 @@ random_state = 42
 target_columns = ["incident"]
 
 
-def train(args):
+def train():
     df = preprocess()
 
     # our ExplainableBoostingClassifier requires a balanced training dataset. We can acheive this by oversampling. To speed it up we train on only N samples with the positive and negative incidents, with replacement.
@@ -25,7 +25,7 @@ def train(args):
     model = ExplainableBoostingClassifier(random_state=random_state, interactions=0)
     print(model.fit(X_train, y_train))
 
-    save_model(model, args.model_dir)
+    save_model(model, "models")
 
 
 def save_model(model, model_dir):
@@ -44,4 +44,4 @@ def input_fn(input_data):
 
 
 if __name__ == "__main__":
-    train()
+    train("data/public.csv")
