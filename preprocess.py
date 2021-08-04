@@ -195,7 +195,7 @@ def oversample(df, y_col, n=None, random_state=42):
     return df
 
 
-def preprocess(data_file, is_training=True):
+def preprocess(data_file):
     # Load Data
     df = pd.read_csv(data_file)
 
@@ -251,7 +251,4 @@ def preprocess(data_file, is_training=True):
     # Gap Between Working Days
     df["gap"] = df.groupby("EmpNo_Anon")["date"].diff().dt.days
 
-    if is_training:
-        return df[input_cols + ["incident"]]
-    else:
-        return df[input_cols]
+    return df[input_cols + ["incident"]]

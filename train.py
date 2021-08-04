@@ -11,8 +11,8 @@ random_state = 42
 target_columns = ["incident"]
 
 
-def train():
-    df = preprocess()
+def train(path):
+    df = preprocess(path)
 
     # our ExplainableBoostingClassifier requires a balanced training dataset. We can acheive this by oversampling. To speed it up we train on only N samples with the positive and negative incidents, with replacement.
     df = oversample(df, "incident", n=15000)
