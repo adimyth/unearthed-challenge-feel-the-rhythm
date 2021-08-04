@@ -19,13 +19,18 @@ The following steps are performed in the online submission pipeline:
 
 The first step is an AWS SageMaker Training job.
 
-In this step the source code of the submission is submitted into a SageMaker Training job with the entry point being the `__main__` function in `train.py`. The Training job executes within a standardized SageMaker container and has the full public data file mapped into the `/opt/ml/input/data/training` directory of the container.
+In this step the source code of the submission is submitted into a SageMaker Training job with the entry point being the `__main__` function in `train.py`. The Training job executes within a standardized SageMaker container and has the full public data file.
 
-It is the responsibility of `train.py` to call any required preprocessing (via the hook to the `preprocess` function in `preprocess.py`) to split the public data into inputs and target variables and perform the actual training.
+It is the responsibility of `train.py` -
+* To call any required preprocessing (via the hook to the `preprocess` function in `preprocess.py`)
+* To split the public data into inputs and target variables and perform the actual training.
 
-Whilst it is possible to perform hyperparameter tuning within `train.py` it is recommended that this is performed offline as the training time during submission is limited to 1 hour.
+> It is recommended to peform hyperparameter tuning offline as the training time during submission is limited to 1 hour.
 
-Finally, the `train.py` must save the model to a binary file, and define a `model_fn` function that can read the binary file at a later point. This template demonstrates this using Pickle. Extensions to Pickle that save state or otherwise manipulate the training, prediction, and scoring environments are not supported, as they are ultimately not available in the industry partner's environment.
+1. `save_model` function must save the model to a binary file,
+2. `model_fn` function can read the binary file at a later point.
+
+This template demonstrates this using Pickle. Extensions to Pickle that save state or otherwise manipulate the training, prediction, and scoring environments are not supported, as they are ultimately not available in the industry partner's environment.
 
 ### Step 2 - Preprocess
 
