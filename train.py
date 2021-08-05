@@ -7,9 +7,9 @@ from os import getenv
 from os.path import abspath, join
 
 import pandas as pd  # type: ignore
-from interpret.glassbox import ExplainableBoostingClassifier  # type: ignore
+import xgboost as xgb  # type: ignore
 
-from preprocess import oversample, preprocess
+from preprocess import preprocess
 
 random_state = 42
 logger = logging.getLogger(__name__)
@@ -38,18 +38,13 @@ def train(args):
     # apply it to the private data
     df = preprocess(join(args.data_dir, "public.csv.gz"))
 
-    # our ExplainableBoostingClassifier requires a balanced training dataset. We can acheive this by oversampling. To speed it up we train on only N samples with the positive and negative incidents, with replacement.
-    df = oversample(df, "incident", n=15000)
-
     # the target variable is incident
     y_train = df[target_columns]
     logger.info(f"training target shape is {y_train.shape}")
     X_train = df.drop(columns=target_columns)
     logger.info(f"training input shape is {X_train.shape}")
 
-    # we use a glassbox model, and put interactions=0 to avoid combining features
-    # see https://interpret.ml/docs/getting-started#train-a-glassbox-model
-    model = ExplainableBoostingClassifier(random_state=random_state, interactions=0)
+    model = xgb.XGBClassifier()
     print(model.fit(X_train, y_train))
 
     # save the model to disk

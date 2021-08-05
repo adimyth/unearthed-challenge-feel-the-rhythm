@@ -154,7 +154,6 @@ wa_hols = [
 wa_hols = pd.to_datetime(wa_hols, format="%Y-%m-%d")
 
 input_cols = [
-    "WORK_DESC",
     "TIME_TYPE",
     "FUNC_CAT",
     "TOT_BRK_TM",
@@ -169,12 +168,6 @@ input_cols = [
 ]
 
 
-def categorise_work_desc(data, pat):
-    temp = data.loc[data["WORK_DESC"].str.contains(pat)]
-    data.loc[temp.index, "WORK_DESC"] = pat
-    return data
-
-
 def add_time_feat(data):
     data["hour"] = data["Work_DateTime"].dt.hour
     data["year"] = data["Work_DateTime"].dt.year
@@ -182,19 +175,6 @@ def add_time_feat(data):
     data["date"] = data["Work_DateTime"].dt.date
     data["day_of_week"] = data["Work_DateTime"].dt.dayofweek
     return data
-
-
-def oversample(df, y_col, n=None, random_state=42):
-    """Sample an equal amount from each class, with replacement"""
-    gs = [g for _, g in df.groupby(y_col)]
-    if n is None:
-        n = max(len(g) for g in gs)
-
-    # sample equal number of each group
-    gs = [g.sample(n, random_state=random_state, replace=True) for g in gs]
-    # concat, and shuffle
-    df = pd.concat(gs, 0)
-    return df
 
 
 def preprocess(data_file, is_training=True):
@@ -205,50 +185,24 @@ def preprocess(data_file, is_training=True):
     df["Work_DateTime"] = pd.to_datetime(df["Work_DateTime"], errors="coerce")
     df = add_time_feat(df)
 
-    # Categorising WORK_DESC
-    df["WORK_DESC"] = df["WORK_DESC"].str.strip().str.upper()
-    df = categorise_work_desc(df, "DESIGN CONNECTION ASSETS")
-    df = categorise_work_desc(df, "NETWORK PLANNING")
-    df = categorise_work_desc(df, "DESIGN INTERNAL")
-    df = categorise_work_desc(df, "REPLACE WOOD POLE PWOD/PINT")
-    df = categorise_work_desc(df, "DESIGN SYSTEM ASSETS")
-    df = categorise_work_desc(df, "REPAIR EARTH PWOD/PINT")
-    df = categorise_work_desc(df, "PROJECT PLANNING")
-    df = categorise_work_desc(df, "REINFORCE WOOD POLE")
-    df = categorise_work_desc(df, "REPLACE OVERHEAD SERVICE")
-    df = categorise_work_desc(df, "REPAIR EARTH")
-    df = categorise_work_desc(df, "REMOVE WEEDS")
-    df = categorise_work_desc(df, "NETWORK FULL INSPECTION")
-    df.loc[
-        df["WORK_DESC"].str.contains(pat=r"(?=.*REPLACE)(?=.*TYRE)", regex=True),
-        "WORK_DESC",
-    ] = "REPLACE TYRES"
-    df.loc[
-        df["WORK_DESC"].str.contains(pat=r"(?=.*REPLACE)(?=.*POLE)", regex=True),
-        "WORK_DESC",
-    ] = "REPLACE POLE"
-
-    # Considering top few hundred categories
-    work_desc_top = df["WORK_DESC"].value_counts().head(500).index.tolist()
-    df["WORK_DESC"] = df["WORK_DESC"].apply(
-        lambda x: x if x in work_desc_top else "OTHER"
-    )
+    # Encoding TIME_TYPE & FUNC_CAT
+    df["TIME_TYPE"] = df["TIME_TYPE"].replace({"Normal Time": 1, "Overtime": 2})
+    df["FUNC_CAT"] = df["FUNC_CAT"].replace({"Operational": 1, "Network or Asset": 2, "Support": 3})
 
     # Western Australia public holiday
     df["holiday"] = df["Work_DateTime"].dt.round("1D").isin(wa_hols)
 
-    # Period
+    # Period: {"Late Night": 1, "Early Morning": 2, "Morning": 3, "Noon": 4, "Evening": 5, "Night": 6}
     bins = [0, 4, 8, 12, 16, 20, 24]
-    labels = ["Late Night", "Early Morning", "Morning", "Noon", "Evening", "Night"]
-    df["period"] = pd.cut(
-        df["Work_DateTime"].dt.hour, bins=bins, labels=labels, include_lowest=True
-    )
+    labels = [1, 2, 3, 4, 5, 6]
+    df["period"] = pd.cut(df["Work_DateTime"].dt.hour, bins=bins, labels=labels, include_lowest=True)
+    df["period"] = pd.to_numeric(df["period"], errors="coerce")
 
-    # Season
-    df.loc[df["month"].isin([12, 1, 2]), "season"] = "Summer"
-    df.loc[df["month"].isin([3, 4, 5]), "season"] = "Autumn"
-    df.loc[df["month"].isin([6, 7, 8]), "season"] = "Winter"
-    df.loc[df["month"].isin([9, 10, 11]), "season"] = "Spring"
+    # Season - {"Summer": 1, "Autumn": 2, "Winter": 3, "Spring": 4}
+    df.loc[df["month"].isin([12, 1, 2]), "season"] = 1
+    df.loc[df["month"].isin([3, 4, 5]), "season"] = 2
+    df.loc[df["month"].isin([6, 7, 8]), "season"] = 3
+    df.loc[df["month"].isin([9, 10, 11]), "season"] = 4
 
     # Gap Between Working Days
     df["gap"] = df.groupby("EmpNo_Anon")["date"].diff().dt.days

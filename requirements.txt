@@ -28,3 +28,4 @@
 #scipy==1.5.3
 #six==1.15.0
 interpret==0.2.4
+xgboost
