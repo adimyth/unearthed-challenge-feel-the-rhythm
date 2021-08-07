@@ -1,3 +1,4 @@
+"""Unearthed Training Template"""
 import argparse
 import logging
 import pickle
@@ -5,11 +6,9 @@ import sys
 from io import StringIO
 from os import getenv
 from os.path import abspath, join
-
 import pandas as pd  # type: ignore
-import xgboost as xgb  # type: ignore
-
-from preprocess import preprocess
+import xgboost as xgb # type: ignore
+from preprocess import preprocess  # type: ignore
 
 random_state = 42
 logger = logging.getLogger(__name__)
@@ -44,6 +43,8 @@ def train(args):
     X_train = df.drop(columns=target_columns)
     logger.info(f"training input shape is {X_train.shape}")
 
+    # we use a glassbox model, and put interactions=0 to avoid combining features
+    # see https://interpret.ml/docs/getting-started#train-a-glassbox-model
     model = xgb.XGBClassifier()
     print(model.fit(X_train, y_train))
 

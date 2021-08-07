@@ -1,8 +1,9 @@
-import argparse
 import logging
+import argparse
 
-import pandas as pd  # type: ignore
-from sklearn.metrics import roc_auc_score  # type: ignore
+import numpy as np
+import pandas as pd
+from sklearn.metrics import roc_auc_score
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -49,3 +50,4 @@ if __name__ == "__main__":
     # write to the output location
     with open(args.output, "w") as f:
         f.write(str(score))
+

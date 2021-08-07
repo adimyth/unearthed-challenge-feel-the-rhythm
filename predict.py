@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
-    """Prediction
+    """Prediction.
 
     The main function is only used by the Unearthed CLI.
 
