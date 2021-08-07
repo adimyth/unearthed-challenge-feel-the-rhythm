@@ -1,6 +1,10 @@
 import argparse
+import logging
 
 import pandas as pd  # type: ignore
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 wa_hols = [
     "2009-01-01",
@@ -192,7 +196,7 @@ def preprocess(data_file, is_training=True):
     # Western Australia public holiday
     df["holiday"] = df["Work_DateTime"].dt.round("1D").isin(wa_hols)
 
-    # Period: {"Late Night": 1, "Early Morning": 2, "Morning": 3, "Noon": 4, "Evening": 5, "Night": 6}
+    # Period - {"Late Night": 1, "Early Morning": 2, "Morning": 3, "Noon": 4, "Evening": 5, "Night": 6}
     bins = [0, 4, 8, 12, 16, 20, 24]
     labels = [1, 2, 3, 4, 5, 6]
     df["period"] = pd.cut(df["Work_DateTime"].dt.hour, bins=bins, labels=labels, include_lowest=True)
@@ -214,6 +218,13 @@ def preprocess(data_file, is_training=True):
 
 
 if __name__ == "__main__":
+    """Preprocess Main
+
+    The main function is called by both Unearthed's SageMaker pipeline and the
+    Unearthed CLI's "unearthed preprocess" command.
+
+    WARNING - modifying this file may cause the submission process to fail.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--input", type=str, default="/opt/ml/processing/input/public/public.csv.gz"
@@ -236,5 +247,6 @@ if __name__ == "__main__":
     except KeyError:
         pass
 
+    logger.info(f"preprocessed result shape is {df.shape}")
     # write to the output location
     df.to_csv(args.output)
