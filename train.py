@@ -6,9 +6,9 @@ import sys
 from io import StringIO
 from os import getenv
 from os.path import abspath, join
-import pandas as pd  # type: ignore
-import xgboost as xgb # type: ignore
-from preprocess import preprocess  # type: ignore
+import pandas as pd
+from interpret.glassbox import ExplainableBoostingClassifier
+from preprocess import preprocess
 
 random_state = 42
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def train(args):
 
     # we use a glassbox model, and put interactions=0 to avoid combining features
     # see https://interpret.ml/docs/getting-started#train-a-glassbox-model
-    model = xgb.XGBClassifier()
+    model = ExplainableBoostingClassifier(random_state=random_state, interactions=0)
     print(model.fit(X_train, y_train))
 
     # save the model to disk

@@ -6,15 +6,11 @@ This script will be invoked in two ways during the Unearthed scoring pipeline:
 """
 import argparse
 import logging
-import pandas as pd
+import pandas as pd # type: ignore
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Add Feature: holidays
-# From https://data.gov.au/data/dataset/australian-holidays-machine-readable-dataset and https://www.michaelplazzer.com/a-better-public-holiday-data-set/
-# Add Feature: holidays
-# From https://data.gov.au/data/dataset/australian-holidays-machine-readable-dataset and https://www.michaelplazzer.com/a-better-public-holiday-data-set/
 wa_hols = [
     '2009-01-01', '2009-01-26', '2009-03-02', '2009-04-10', '2009-04-11',
     '2009-04-12', '2009-04-13', '2009-04-25', '2009-04-27', '2009-06-01',
@@ -49,22 +45,29 @@ wa_hols = [
 ]
 wa_hols = pd.to_datetime(wa_hols, format="%Y-%m-%d")
 
+
 input_cols = [
     "TIME_TYPE",
     "FUNC_CAT",
-    "TOT_BRK_TM",
-    "hour",
-    "holiday",
-    "day_of_year",
-    "day_name",
-    "week",
-    "day_of_week",
-    "month",
-    "year",
-    "period",
-    "season",
-    "gap"
+    # "TOT_BRK_TM",
+    # "hour",
+    # "day_of_week",
+    # "month",
+    # "year",
+    # "holiday",
+    # "period",
+    # "season",
+    # "gap",
 ]
+
+
+def add_time_feat(data):
+    data["hour"] = data["Work_DateTime"].dt.hour
+    data["year"] = data["Work_DateTime"].dt.year
+    data["month"] = data["Work_DateTime"].dt.month
+    data["date"] = data["Work_DateTime"].dt.date
+    data["day_of_week"] = data["Work_DateTime"].dt.dayofweek
+    return data
 
 
 def preprocess(data_file, is_training = True):
@@ -85,28 +88,27 @@ def preprocess(data_file, is_training = True):
     )
     logger.info(f"data read from {data_file} has shape of {df.shape}")
 
-    # Add some time features. See https://pandas.pydata.org/docs/reference/api/pandas.Series.dt.html and https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html
-    dt = df.Work_DateTime.dt
-    df["hour"] = dt.hour
-    df["day_of_week"] = dt.dayofweek
-    df["day_of_year"] = dt.dayofyear
-    df["day_name"] = dt.day_name()
-    df["year"] = dt.year
-    df["week"] = dt.week
-    df["date"] = dt.date
-    df["month"] = dt.month
-
-    # Was the day a Western Australia public holiday?
-    df["holiday"] = dt.round("1D").isin(wa_hols)
+    # Add Time Features
+    # df["Work_DateTime"] = pd.to_datetime(df["Work_DateTime"], errors="coerce")
+    # df = add_time_feat(df)
+    # dt = df.Work_DateTime.dt
+    # df["hour"] = dt.hour
+    # df["year"] = dt.year
+    # df["month"] = dt.month
+    # df["date"] = dt.date
+    # df["day_of_week"] = dt.dayofweek
 
     # Encoding TIME_TYPE & FUNC_CAT
     df["TIME_TYPE"] = df["TIME_TYPE"].replace({"Normal Time": 1, "Overtime": 2})
     df["FUNC_CAT"] = df["FUNC_CAT"].replace({"Operational": 1, "Network or Asset": 2, "Support": 3})
 
+    # Western Australia public holiday
+    # df["holiday"] = dt.round("1D").isin(wa_hols)
+
     # Period - {"Late Night": 1, "Early Morning": 2, "Morning": 3, "Noon": 4, "Evening": 5, "Night": 6}
     bins = [0, 4, 8, 12, 16, 20, 24]
     labels = [1, 2, 3, 4, 5, 6]
-    df["period"] = pd.cut(df.hour, bins=bins, labels=labels, include_lowest=True)
+    df["period"] = pd.cut(df["Work_DateTime"].dt.hour, bins=bins, labels=labels, include_lowest=True)
     df["period"] = pd.to_numeric(df["period"], errors="coerce")
 
     # Season - {"Summer": 1, "Autumn": 2, "Winter": 3, "Spring": 4}
